@@ -1,0 +1,5 @@
+name = IP to Country Mapper
+description = Gets the IP address of the current user and map it to their country.
+package = Custom
+core = 7.x
+version = 7.x-1.0-dev

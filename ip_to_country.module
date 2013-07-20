@@ -1,0 +1,90 @@
+<?php
+
+function ip_to_country_boot() {
+  global $country_name;
+  // Get IP address of the user
+  $var_ip = '/' . ip_address();
+
+  $url = '';
+
+  if(variable_get('geoip_url')) {
+    $url = variable_get('geoip_url') . '/json' . $var_ip;
+  }
+  else {
+    $url = 'http://freegeoip.net/json' . $var_ip;
+  }
+
+  variable_set('geoip_url', variable_get('geoip_url') ? variable_get('geoip_url') : 'http://freegeoip.net');
+
+  // Get cURL resource
+  $curl = curl_init();
+  // Set some options - we are passing in a useragent too here
+  curl_setopt_array($curl, array(
+    CURLOPT_RETURNTRANSFER => 1,
+    CURLOPT_URL => $url,
+    CURLOPT_USERAGENT => 'SetIndia website'
+  ));
+  // Send the request & save response to $resp
+  $resp = curl_exec($curl);
+  // Close request to clear up some resources
+  curl_close($curl);
+
+  $data = json_decode($resp);
+
+  //echo $varial;
+  
+
+  $country_name = $data->country_name;
+}
+
+function ip_to_country_menu() {
+  $items = array();
+  $items['admin/config/people/ip-country-settings'] = array(
+    'title' => t('IP Country Mapping'),
+    'description' => t('Settings form to set the server location of freeGeoIpServer (redis server).'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ip_to_country_form'),
+    'access arguments' => array('add geoip server'),
+  );
+  return $items;
+}
+
+function ip_to_country_permission() {
+  return array(
+    'add geoip server' => array(
+      'title' => t('Add FreeGeoIP Server'),
+      'description' => t('Add / Change FreeGeoIP Server URL.'),
+    ),
+  );
+}
+
+function ip_to_country_form($form, &$form_state) {
+  $form = array();
+  $form['description'] = array(
+    '#type' => 'item',
+    '#title' => t('Settings form to set the server location of freeGeoIpServer.'),
+  );
+  $form['geoip_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('FreeGeoIP URL'),
+    '#description' => t('Enter the FreeGeoIP Server URL, format : http://{I.P}:{port}. Default is http://freegeoip.net'),
+    '#default_value' => variable_get('geoip_url'),
+    '#required' => TRUE,
+  );
+  
+  $form['#validate'][] = 'ip_to_country_test_connection';
+  return system_settings_form($form);
+}
+
+function ip_to_country_test_connection() {
+  drupal_set_message('validation in progress');
+}
+
+function ip_to_country_form_alter(&$form, &$form_state, $form_id) {
+  
+  if($form_id == 'ip_to_country_form') {
+    echo "<pre>";
+    print_r($form);
+    echo "</pre>";
+  }
+}
